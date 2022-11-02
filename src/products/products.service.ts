@@ -1,10 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToInstance } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { DecreaseStockDto } from './dto/decreaseProductStock.dto';
-import { ProductDetailsDto } from './dto/productDetails.dto';
 import { Product } from './entity/product.entity';
 
 @Injectable()

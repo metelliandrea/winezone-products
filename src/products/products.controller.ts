@@ -13,6 +13,7 @@ import {
   Next,
   Header,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { hostname } from 'os';
 import { CreateProductDto } from './dto/createProduct.dto';
@@ -114,6 +115,7 @@ export class ProductsController {
   @ApiInternalServerErrorResponse({
     status: 500,
     description: 'InternalServerError',
+    type: InternalServerErrorException,
   })
   @Header('X-Reply-From', hostname())
   findAll(@Query('withDeleted') withDeleted?: boolean) {
