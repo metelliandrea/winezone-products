@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { In, Repository } from 'typeorm';
 import { DecreaseStockDto } from './dto/decreaseProductStock.dto';
+import { ProductDetailsDto } from './dto/productDetails.dto';
 import { Product } from './entity/product.entity';
 
 @Injectable()
@@ -16,7 +18,9 @@ export class ProductsService {
 
     if (!product) {
       throw new RpcException(
-        "Cannot update product's stock. Product not found",
+        new BadRequestException(
+          "Cannot update product's stock. Product not found",
+        ),
       );
     }
 
@@ -27,5 +31,16 @@ export class ProductsService {
     return {};
   }
 
-  async getProductDetails(payload: GetProductDetailsDto) {}
+  async getProductDetails(payload: { products: string | string[] }) {
+    if (Array.isArray(payload.products)) {
+      return this.productRepository.find({
+        where: { id: In(payload.products) },
+      });
+    } else
+      throw new RpcException(
+        new BadRequestException(
+          'Please provide a list of products identifiers',
+        ),
+      );
+  }
 }
