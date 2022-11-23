@@ -23,15 +23,22 @@ export class AuthenticationMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: (error?: any) => void) {
     const { data } = await lastValueFrom(
       this.httpService
-        .get('http://localhost:3001/auth/verify', {
-          headers: {
-            Authorization: ExtractJwt.fromAuthHeaderAsBearerToken().call(
-              null,
-              req,
-            ),
-            'X-Correlation-Id': req.headers['x-correlation-id'],
+        .get(
+          `http://${this.configService.get<string>(
+            'AUTH_SERVICE_INTERNAL_URL',
+          )}:${this.configService.get<string>(
+            'AUTH_SERVICE_INTERNAL_PORT',
+          )}/auth/verify`,
+          {
+            headers: {
+              Authorization: ExtractJwt.fromAuthHeaderAsBearerToken().call(
+                null,
+                req,
+              ),
+              'X-Correlation-Id': req.headers['x-correlation-id'],
+            },
           },
-        })
+        )
         .pipe(
           catchError((err: AxiosError) => {
             // Forward existing Correlation Id, if exist any
