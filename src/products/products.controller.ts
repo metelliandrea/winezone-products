@@ -14,6 +14,7 @@ import {
   Header,
   BadRequestException,
   UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import { hostname } from 'os';
 import { CreateProductDto } from './dto/createProduct.dto';
@@ -38,9 +39,12 @@ import {
 } from '@nestjs/swagger';
 import { Product } from './entity/product.entity';
 import { MessagePatternExceptionFilter } from 'src/filters/rpcException.filter';
+import { CheckUserRoles } from 'src/guards/role.guard';
+import { RequiredRoles, Roles } from 'src/decorators/role.decorator';
 
-@Controller('products')
 @ApiTags('Products')
+@Controller('products')
+@UseGuards(CheckUserRoles)
 @UseInterceptors(ClassSerializerInterceptor)
 export class ProductsController {
   constructor(
@@ -58,6 +62,7 @@ export class ProductsController {
   @ApiOkResponse({ status: 204 })
   @ApiBadRequestResponse({ type: BadRequestException })
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN)
   async create(@Body() createProductDto: CreateProductDto): Promise<void> {
     return this.commandBus.execute(new CreateProductCommand(createProductDto));
   }
@@ -65,6 +70,7 @@ export class ProductsController {
   @Patch(':id')
   @HttpCode(204)
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN)
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.commandBus.execute(
       new UpdateProductCommand(id, updateProductDto),
@@ -74,6 +80,7 @@ export class ProductsController {
   @Delete(':id')
   @HttpCode(204)
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN)
   remove(@Param('id') id: string) {
     return this.commandBus.execute(new DeleteProductCommand(id));
   }
@@ -96,6 +103,7 @@ export class ProductsController {
 
   @Get()
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN, Roles.PREMIUM, Roles.STANDARD)
   findAll(@Query('withDeleted') withDeleted?: boolean) {
     return this.queryBus.execute(new FindAllProductsQuery(withDeleted));
   }
@@ -115,6 +123,7 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'NotFound' })
   @ApiResponse({ status: 500, description: 'InternalServerError' })
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN, Roles.PREMIUM, Roles.STANDARD)
   findOne(@Param('id') id: string, @Next() next: NextFunction) {
     if (id !== 'search')
       return this.queryBus.execute(new FindOneProductQuery(id));
@@ -131,6 +140,7 @@ export class ProductsController {
     type: Product,
   })
   @Header('X-Reply-From', hostname())
+  @RequiredRoles(Roles.ADMIN, Roles.PREMIUM, Roles.STANDARD)
   search(@Query('q') q: string) {
     return this.queryBus.execute(new SearchProductsQuery(q));
   }
