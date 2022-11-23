@@ -1,5 +1,5 @@
 import { AppModule } from './app.module';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -9,12 +9,21 @@ import {
   SwaggerDocumentOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
+import { HttpExceptionsFilter } from './filters/httpException.filter';
 
 async function bootstrap() {
-  const app: NestExpressApplication = await NestFactory.create(AppModule);
+  const app: NestExpressApplication = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
 
   const config: ConfigService = app.get(ConfigService);
-  const port: number = config.get<number>('PORT') || 3000;
+  const port: number = config.get<number>('PORT') || 3001;
+
+  app.useLogger(app.get(Logger));
+  app.useGlobalFilters(
+    new HttpExceptionsFilter(app.get(HttpAdapterHost), config),
+  );
 
   // Swagger
   const swaggerOptions: SwaggerDocumentOptions = {};
@@ -68,11 +77,13 @@ async function bootstrap() {
             port: config.get<number>('RABBITMQ_PORT') || 5672,
             username: config.get<string>('RABBITMQ_USERNAME') || 'root',
             password: config.get<string>('RABBITMQ_PASSWORD') || 'root',
-            vhost: '/products',
+            vhost: '/',
           },
         ],
         prefetchCount: 1,
-        queue: config.get<string>('RABBITMQ_QUEUE') || 'stock_queue',
+        queue:
+          config.get<string>('RABBITMQ_PRODUCTS_QUEUE_NAME') ||
+          'products_queue',
         queueOptions: { durable: true },
       },
     },

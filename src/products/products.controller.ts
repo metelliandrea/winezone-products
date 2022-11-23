@@ -13,31 +13,31 @@ import {
   Next,
   Header,
   BadRequestException,
-  InternalServerErrorException,
+  UseFilters,
 } from '@nestjs/common';
 import { hostname } from 'os';
 import { CreateProductDto } from './dto/createProduct.dto';
 import { UpdateProductDto } from './dto/updateProduct.dto';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CreateProductCommand } from './commands/implementations/createProduct.command';
-import { FindOneProductQuery } from './queries/implementations/findOneProduct.query';
-import { FindAllProductsQuery } from './queries/implementations/findAllProducts.query';
-import { UpdateProductCommand } from './commands/implementations/updateProduct.command';
-import { DeleteProductCommand } from './commands/implementations/deleteProduct.command';
-import { SearchProductsQuery } from './queries/implementations/searchProducts.query';
+import { CreateProductCommand } from './commands/impl/createProduct.command';
+import { FindOneProductQuery } from './queries/impl/findOneProduct.query';
+import { FindAllProductsQuery } from './queries/impl/findAllProducts.query';
+import { UpdateProductCommand } from './commands/impl/updateProduct.command';
+import { DeleteProductCommand } from './commands/impl/deleteProduct.command';
+import { SearchProductsQuery } from './queries/impl/searchProducts.query';
 import { NextFunction } from 'express';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { DecreaseStockDto } from './dto/decreaseProductStock.dto';
+import { updateProductStockDto } from './dto/updateProductStock.dto';
 import { ProductsService } from './products.service';
 import {
   ApiBadRequestResponse,
-  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Product } from './entity/product.entity';
+import { MessagePatternExceptionFilter } from 'src/filters/rpcException.filter';
 
 @Controller('products')
 @ApiTags('Products')
@@ -57,14 +57,6 @@ export class ProductsController {
   @HttpCode(204)
   @ApiOkResponse({ status: 204 })
   @ApiBadRequestResponse({ type: BadRequestException })
-  // @ApiResponse({ status: 201, description: 'Created' })
-  // @ApiResponse({
-  //   status: 400,
-  //   description: 'BadRequest',
-  //   type: BadRequestException,
-  // })
-  // @ApiResponse({ status: 404, description: 'NotFound' })
-  // @ApiResponse({ status: 500, description: 'InternalServerError' })
   @Header('X-Reply-From', hostname())
   async create(@Body() createProductDto: CreateProductDto): Promise<void> {
     return this.commandBus.execute(new CreateProductCommand(createProductDto));
@@ -86,12 +78,14 @@ export class ProductsController {
     return this.commandBus.execute(new DeleteProductCommand(id));
   }
 
-  @MessagePattern('decrease-stock')
-  decreaseStock(@Payload() payload: DecreaseStockDto) {
+  @MessagePattern('update_stock')
+  @UseFilters(new MessagePatternExceptionFilter())
+  decreaseStock(@Payload() payload: updateProductStockDto) {
     return this.productsService.decreaseStock(payload);
   }
 
-  @MessagePattern('products-details')
+  @MessagePattern('products_details')
+  @UseFilters(new MessagePatternExceptionFilter())
   getProductDetails(@Payload() payload: { products: string | string[] }) {
     return this.productsService.getProductDetails(payload);
   }
@@ -101,22 +95,6 @@ export class ProductsController {
    */
 
   @Get()
-  @ApiOkResponse({
-    status: 201,
-    description: 'Retrieve all products in database',
-    type: Product,
-    isArray: true,
-  })
-  @ApiBadRequestResponse({
-    status: 400,
-    description: 'BadRequest',
-    type: BadRequestException,
-  })
-  @ApiInternalServerErrorResponse({
-    status: 500,
-    description: 'InternalServerError',
-    type: InternalServerErrorException,
-  })
   @Header('X-Reply-From', hostname())
   findAll(@Query('withDeleted') withDeleted?: boolean) {
     return this.queryBus.execute(new FindAllProductsQuery(withDeleted));
@@ -145,6 +123,13 @@ export class ProductsController {
   }
 
   @Get('search')
+  @ApiOperation({ summary: 'Search products' })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Search products by Title, Descriptions, using a search keyword',
+    type: Product,
+  })
   @Header('X-Reply-From', hostname())
   search(@Query('q') q: string) {
     return this.queryBus.execute(new SearchProductsQuery(q));

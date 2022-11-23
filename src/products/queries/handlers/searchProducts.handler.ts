@@ -3,7 +3,7 @@ import { Like, Repository } from 'typeorm';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entity/product.entity';
-import { SearchProductsQuery } from '../implementations/searchProducts.query';
+import { SearchProductsQuery } from '../impl/searchProducts.query';
 
 @QueryHandler(SearchProductsQuery)
 export class SearchProductsHandler

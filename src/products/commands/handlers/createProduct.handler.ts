@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entity/product.entity';
 import { Repository } from 'typeorm';
-import { CreateProductCommand } from '../implementations/createProduct.command';
+import { CreateProductCommand } from '../impl/createProduct.command';
 
 @CommandHandler(CreateProductCommand)
 export class CreateProductHandler

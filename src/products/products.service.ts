@@ -1,29 +1,34 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { DecreaseStockDto } from './dto/decreaseProductStock.dto';
+import { updateProductStockDto } from './dto/updateProductStock.dto';
 import { Product } from './entity/product.entity';
 
 @Injectable()
 export class ProductsService {
   @InjectRepository(Product) productRepository: Repository<Product>;
 
-  async decreaseStock(payload: DecreaseStockDto): Promise<any> {
+  constructor(private readonly config: ConfigService) {}
+
+  async decreaseStock(payload: updateProductStockDto): Promise<any> {
     const product = await this.productRepository.findOneBy({
       id: payload.productId,
     });
 
     if (!product) {
-      throw new RpcException(
-        new BadRequestException(
-          "Cannot update product's stock. Product not found",
-        ),
-      );
+      throw new RpcException({
+        message: "Cannot update product's stock. Product not found",
+      });
     }
 
     await this.productRepository.update(payload.productId, {
-      stock: product.stock - payload.quantity,
+      stock:
+        payload.action ===
+        this.config.get<string>('ADD_PRODUCTS_TO_STOCK_SYMBOL')
+          ? product.stock + payload.quantity
+          : product.stock - payload.quantity,
     });
 
     return {};
@@ -35,10 +40,8 @@ export class ProductsService {
         where: { id: In(payload.products) },
       });
     } else
-      throw new RpcException(
-        new BadRequestException(
-          'Please provide a list of products identifiers',
-        ),
-      );
+      throw new RpcException({
+        message: 'Please provide a list of products identifiers',
+      });
   }
 }

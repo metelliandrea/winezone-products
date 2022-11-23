@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entity/product.entity';
 import { Repository } from 'typeorm';
-import { DeleteProductCommand } from '../implementations/deleteProduct.command';
+import { DeleteProductCommand } from '../impl/deleteProduct.command';
 
 @CommandHandler(DeleteProductCommand)
 export class DeleteProductHandler

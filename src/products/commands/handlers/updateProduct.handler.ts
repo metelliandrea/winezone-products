@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from 'src/products/entity/product.entity';
 import { Repository } from 'typeorm';
-import { UpdateProductCommand } from '../implementations/updateProduct.command';
+import { UpdateProductCommand } from '../impl/updateProduct.command';
 import { NotFoundException } from '@nestjs/common';
 
 @CommandHandler(UpdateProductCommand)
