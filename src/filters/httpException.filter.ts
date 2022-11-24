@@ -48,6 +48,7 @@ export class HttpExceptionsFilter implements ExceptionFilter {
     };
 
     // Logtail
+    /*
     const logTail = new Logtail(this.config.get<string>('LOGTAIL_TOKEN'));
     logTail.log(
       isHttpException
@@ -56,7 +57,8 @@ export class HttpExceptionsFilter implements ExceptionFilter {
       LogLevel.Error,
       responseBody,
     );
-
+    */
+    
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
   }
 
